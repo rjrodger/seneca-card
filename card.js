@@ -56,12 +56,21 @@ module.exports = function( options ) {
   }, cmd_relate)
 
 
+
   seneca.add({
     role: 'entity',
     base: 'card',
     cmd:  'save',
 
   }, card_save)
+
+
+  seneca.add({
+    role: 'entity',
+    base: 'card',
+    cmd:  'load',
+
+  }, card_load)
 
 
 
@@ -92,20 +101,7 @@ module.exports = function( options ) {
     top.save$(function(err,top){
       if(err) return done(err);
 
-      top.parent = top      
-      top.save$( function(err,top) {
-        if(err) return done(err);
-
-        cardent.load$(top.id,function(err,card){
-          if(err) return done(err);
-
-          card.parent = card.id
-          card.save$(function(err){
-            if(err) return done(err);
-            done(null,top)
-          })
-        })
-      })
+      return done(null,top)
     })
   }
 
@@ -233,12 +229,46 @@ module.exports = function( options ) {
 
             out.content.children = out.card.children
             out.content.parent   = parent ? parent.id : out.content.id
+
             return done(null,out.content)
           })
       }
       else return done(null,content)
     }
   }
+
+
+
+
+  function card_load(args, done){
+    var seneca = this
+
+    if( seneca.has('role:entity,base:card,cmd:load') ) {
+      return seneca.prior( args, after );
+    }
+    else {
+      delete args.base
+      return seneca.act( args, after );
+    }
+
+    function after( err, content ) {
+      if( err ) return done(err);
+      if( !content ) return done();
+
+      if( 'card' != args.name ) {
+        cardent.load$(content.id,function(err,card){
+          if( err ) return done(err);
+
+          content.parent = card.parent
+          content.children = card.children
+
+          return done(null,content);
+        })
+      }
+      else return done(null,content);
+    }
+  }
+
 
 
 
