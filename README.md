@@ -3,9 +3,9 @@ seneca-card - a [Seneca](http://senecajs.org) plugin
 
 ## Seneca Card Plugin
 
-This plugin provides a [HyperCard]()-esque data model.
+This plugin provides a [HyperCard](http://en.wikipedia.org/wiki/Hypercard)-esque data model.
 
-[![Build Status](https://travis-ci.org/rjrodger/seneca-card.png?branch=master)](https://travis-ci.org/rjrodger/seneca-ng-wb)
+[![Build Status](https://travis-ci.org/rjrodger/seneca-card.png?branch=master)](https://travis-ci.org/rjrodger/seneca-card)
 
 [![NPM](https://nodei.co/npm/seneca-card.png)](https://nodei.co/npm/seneca-card/)
 [![NPM](https://nodei.co/npm-dl/seneca-card.png)](https://nodei.co/npm-dl/seneca-card/)
