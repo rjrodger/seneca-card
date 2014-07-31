@@ -2,8 +2,9 @@
 "use strict";
 
 
-var _   = require('underscore')
-var nid = require('nid')
+var _     = require('underscore')
+var nid   = require('nid')
+var async = require('async')
 
 
 
@@ -13,7 +14,7 @@ module.exports = function( options ) {
 
 
   options = seneca.util.deepextend({
-
+    removeLimit: 5
   },options)
   
 
@@ -56,6 +57,13 @@ module.exports = function( options ) {
   }, cmd_relate)
 
 
+  seneca.add({
+    role: plugin,
+    cmd: 'unrelate',
+
+  }, cmd_unrelate)
+
+
 
   seneca.add({
     role: 'entity',
@@ -71,6 +79,14 @@ module.exports = function( options ) {
     cmd:  'load',
 
   }, card_load)
+
+
+  seneca.add({
+    role: 'entity',
+    base: 'card',
+    cmd:  'remove',
+
+  }, card_remove)
 
 
 
@@ -196,6 +212,36 @@ module.exports = function( options ) {
 
 
 
+  function cmd_unrelate( args, done ) {
+    var seneca = this
+
+    var content  = args.ent
+    var cardname = content.canon$({object:true}).name
+
+    cardent.load$(contentid, function(err,card){
+      if( err ) return done(err);
+
+      var parentid = card.parent
+
+      cardent.load$(parentid,function(err, parentcard){
+        if( err ) return done(err);
+        if( !parentcard ) return done();
+        
+        parentcard.children = _.filter(parentcard.children,function(child){
+          return child != content.id
+        })
+
+        parentcard.save$(function(err){
+          if( err ) return done(err);
+
+          card.remove$(done)
+        })
+      }) 
+    })
+  }
+
+
+
   function card_save(args, done){
     var seneca = this
 
@@ -239,7 +285,6 @@ module.exports = function( options ) {
 
 
 
-
   function card_load(args, done){
     var seneca = this
 
@@ -266,6 +311,49 @@ module.exports = function( options ) {
         })
       }
       else return done(null,content);
+    }
+  }
+
+
+
+  function card_remove(args, done){
+    var seneca = this
+
+    var qent = args.qent
+    var q    = args.q
+
+    var all  = q.all$ // default false
+    var load  = _.isUndefined(q.load$) ? true : q.load$ // default true 
+  
+    list(seneca,entmap,qent,q,function(err,list){
+      if( err ) return cb(err);
+
+      list = all ? list : 0<list.length ? list.slice(0,1) : []
+
+      async.mapLimit(list,options.removeLimit,function(ent,cb){
+
+        if( 'card' != args.name ) {
+          seneca.act(
+            {role:plugin,cmd:'unrelate',ent:ent},
+            cb)
+        }
+        else return cb();
+
+      },function(err) {
+        if( err ) return done(err);
+
+        var ent = all ? null : load ? list[0] || null : null
+        done(null,ent)
+      })
+    })
+
+
+    if( seneca.has('role:entity,base:card,cmd:remove') ) {
+      return seneca.prior( args, after );
+    }
+    else {
+      delete args.base
+      return seneca.act( args, done );
     }
   }
 
