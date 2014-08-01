@@ -218,7 +218,7 @@ module.exports = function( options ) {
     var content  = args.ent
     var cardname = content.canon$({object:true}).name
 
-    cardent.load$(contentid, function(err,card){
+    cardent.load$(content.id, function(err,card){
       if( err ) return done(err);
 
       var parentid = card.parent
@@ -260,6 +260,7 @@ module.exports = function( options ) {
       return seneca.prior( args, after );
     }
     else {
+      delete args.actid$
       delete args.base
       return seneca.act( args, after );
     }
@@ -292,6 +293,7 @@ module.exports = function( options ) {
       return seneca.prior( args, after );
     }
     else {
+      delete args.actid$
       delete args.base
       return seneca.act( args, after );
     }
@@ -317,20 +319,25 @@ module.exports = function( options ) {
 
 
   function card_remove(args, done){
+    //return done('bad')
+
     var seneca = this
 
-    var qent = args.qent
-    var q    = args.q
+    var load = _.isUndefined(args.q.load$) ? true : args.q.load$ // default true 
+    var all  = args.q.all$ // default false
 
-    var all  = q.all$ // default false
-    var load  = _.isUndefined(q.load$) ? true : q.load$ // default true 
-  
-    list(seneca,entmap,qent,q,function(err,list){
+    var listargs = _.clone(args)
+    listargs.cmd = 'list'
+    seneca.act(listargs,after)
+
+    function after(err,list){
       if( err ) return cb(err);
 
       list = all ? list : 0<list.length ? list.slice(0,1) : []
 
       async.mapLimit(list,options.removeLimit,function(ent,cb){
+
+        // TODO: disallow if has children
 
         if( 'card' != args.name ) {
           seneca.act(
@@ -342,19 +349,26 @@ module.exports = function( options ) {
       },function(err) {
         if( err ) return done(err);
 
-        var ent = all ? null : load ? list[0] || null : null
-        done(null,ent)
+        if( seneca.has('role:entity,base:card,cmd:remove') ) {
+          return seneca.prior( args, complete );
+        }
+        else {
+          delete args.actid$
+          delete args.base
+
+          return seneca.act( args, complete );
+        }
+
+        function complete(err) {
+          if( err ) return done(err);
+          var ent = all ? null : load ? list[0] || null : null
+
+          done(null,ent)
+        }
       })
-    })
+    }
 
 
-    if( seneca.has('role:entity,base:card,cmd:remove') ) {
-      return seneca.prior( args, after );
-    }
-    else {
-      delete args.base
-      return seneca.act( args, done );
-    }
   }
 
 

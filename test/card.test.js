@@ -24,35 +24,54 @@ describe('card', function() {
       function(err,top){
         if(err) return fin(err);
 
-        console.log(top)
-
         assert.equal(top.id,top.parent)
         assert.equal(0,top.children.length)
 
+      ;si.make$(
+        'card/note',
+        {parent:top,text:'note0'}
 
-        si.make$(
-          'card/note',
-          {parent:top,text:'note0'}
+      ).save$(function(err,note0){
+        if(err) return fin(err);
 
-        ).save$(function(err,note0){
+        assert.equal(top.id,note0.parent)
+        assert.equal(0,note0.children.length)
 
-          si.make$(
-            'card/img',
-            {parent:top,title:'Image',caption:'img 0',data:'abcdef'}
+      ;si.make$(
+          'card/img',
+          {parent:note0,title:'Image',caption:'img 0',data:'abcdef'}
+        
+      ).save$(function(err,img0){
+        if(err) return fin(err);
 
-          ).save$(function(err,img0){
+        assert.equal(note0.id,img0.parent)
+        assert.equal(0,img0.children.length)
+        
+      ;si.act('role:card,cmd:children',{card:top},function(err,out){
+        if(err) return fin(err);
+        assert.equal(out.children[0].id,note0.id)
 
-            si.act('role:card,cmd:children',{card:top},console.log)
+      ;si.act('role:card,cmd:children',{card:note0},function(err,out){
+        if(err) return fin(err);
+        assert.equal(out.children[0].id,img0.id)
 
-            // title, parent, children fields in card/card
-            // card/note contains text
-            si.act('role:mem-store,cmd:dump',function(err,out){
-              console.log(util.inspect(out,{depth:null}))
-              fin()
-            })
-          })
-        })
-      })
+      ;si.act('role:card,cmd:children',{card:img0},function(err,out){
+        if(err) return fin(err);
+        assert.equal(out.children.length,0)
+
+      ;si.act('role:mem-store,cmd:dump',function(err,out){
+        if(err) return fin(err);
+        console.log(util.inspect(out,{depth:null}))
+
+      ;note0.remove$({id:note0.id},function(err){
+        if(err) return fin(err);
+
+      ;si.act('role:mem-store,cmd:dump',function(err,out){
+        if(err) return fin(err);
+        console.log(util.inspect(out,{depth:null}))
+        fin()
+
+      }) }) }) }) }) }) }) }) })
   })
 
 })
