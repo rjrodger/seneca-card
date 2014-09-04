@@ -241,7 +241,7 @@ module.exports = function( options ) {
         parentcard.save$(function(err){
           if( err ) return done(err);
 
-          card.remove$(done)
+          card.remove$(null, done)
         })
       }) 
     })
