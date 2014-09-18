@@ -230,20 +230,25 @@ module.exports = function( options ) {
 
       var parentid = card.parent
 
-      cardent.load$(parentid,function(err, parentcard){
-        if( err ) return done(err);
-        if( !parentcard ) return done();
-        
-        parentcard.children = _.filter(parentcard.children,function(child){
-          return child != content.id
-        })
-
-        parentcard.save$(function(err){
+      if( !parentid ) {
+        card.remove$(null, done)
+      }
+      else {
+        cardent.load$(parentid,function(err, parentcard){
           if( err ) return done(err);
+          if( !parentcard ) return done();
 
-          card.remove$(null, done)
+          parentcard.children = _.filter(parentcard.children,function(child){
+            return child != content.id
+          })
+
+          parentcard.save$(function(err){
+            if( err ) return done(err);
+
+            card.remove$(null, done)
+          })
         })
-      }) 
+      }
     })
   }
 
