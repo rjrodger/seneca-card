@@ -20,7 +20,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "nid": "^0.3.2",
-    "seneca": "^0.5.19",
+    "seneca": "^0.5.20",
     "underscore": "^1.6.0"
   },
   "peerDependencies": {
