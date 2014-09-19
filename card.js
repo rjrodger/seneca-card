@@ -231,7 +231,7 @@ module.exports = function( options ) {
       var parentid = card.parent
 
       if( !parentid ) {
-        card.remove$(null, done)
+        card.remove$(done)
       }
       else {
         cardent.load$(parentid,function(err, parentcard){
@@ -245,7 +245,7 @@ module.exports = function( options ) {
           parentcard.save$(function(err){
             if( err ) return done(err);
 
-            card.remove$(null, done)
+            card.remove$(done)
           })
         })
       }
