@@ -334,8 +334,6 @@ module.exports = function( options ) {
 
 
   function card_remove(args, done){
-    //return done('bad')
-
     var seneca = this
 
     var load = _.isUndefined(args.q.load$) ? true : args.q.load$ // default true
@@ -353,8 +351,10 @@ module.exports = function( options ) {
       list = all ? list : 0<list.length ? list.slice(0,1) : []
 
       async.series([
+        // remove children
+        _.bind(async.eachLimit, async, list, options.removeLimit, remove_children),
         // unrelate cards first
-        _.bind(async.mapLimit, async, list, options.removeLimit, unrelate),
+        _.bind(async.eachLimit, async, list, options.removeLimit, unrelate),
         // act remove
         remove
         // finally
@@ -367,6 +367,20 @@ module.exports = function( options ) {
         done(null,ent)
       }
     })
+
+    function remove_children(ent, cb) {
+      if( 'card' != args.name ) {
+        seneca.act('role:card,cmd:children', {card: ent}, function (err, children) {
+          if (err) { return cb(err) }
+
+          async.eachLimit(children.children, options.removeLimit, function (child, done) {
+            var childent = seneca.make$('card/' + child.name);
+            childent.remove$({id: child.id}, done)
+          }, cb)
+        })
+      }
+      else return cb();
+    }
 
     function unrelate(ent, cb) {
       if( 'card' != args.name ) {
