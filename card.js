@@ -107,6 +107,7 @@ module.exports = function( options ) {
   })
 
 
+
   function make_top(args, done){
     var seneca = this
 
@@ -120,6 +121,7 @@ module.exports = function( options ) {
       return done(null,top)
     })
   }
+
 
 
   function cmd_children( args, done ) {
@@ -149,7 +151,8 @@ module.exports = function( options ) {
     })
   }
 
-  
+
+
   function cmd_relate( args, done ) {
     var seneca = this
 
@@ -335,54 +338,57 @@ module.exports = function( options ) {
 
     var seneca = this
 
-    var load = _.isUndefined(args.q.load$) ? true : args.q.load$ // default true 
+    var load = _.isUndefined(args.q.load$) ? true : args.q.load$ // default true
+
+    // only removes first matching card unless all$ is set
     var all  = args.q.all$ // default false
 
     var listargs = _.clone(args)
     listargs.cmd = 'list'
-    seneca.act(listargs,after)
 
-    function after(err,list){
+    // load cards
+    seneca.act(listargs, function(err,list) {
       if( err ) return cb(err);
 
       list = all ? list : 0<list.length ? list.slice(0,1) : []
 
-      async.mapLimit(list,options.removeLimit,function(ent,cb){
+      async.series([
+        // unrelate cards first
+        _.bind(async.mapLimit, async, list, options.removeLimit, unrelate),
+        // act remove
+        remove
+        // finally
+      ], complete)
 
-        // TODO: disallow if has children
-
-        if( 'card' != args.name ) {
-          seneca.act(
-            {role:plugin,cmd:'unrelate',ent:ent},
-            cb)
-        }
-        else return cb();
-
-      },function(err) {
+      function complete(err) {
         if( err ) return done(err);
+        var ent = all ? null : load ? list[0] || null : null
 
-        if( seneca.has('role:entity,base:card,cmd:remove') ) {
-          return seneca.prior( args, complete );
-        }
-        else {
-          delete args.actid$
-          delete args.base
+        done(null,ent)
+      }
+    })
 
-          return seneca.act( args, complete );
-        }
-
-        function complete(err) {
-          if( err ) return done(err);
-          var ent = all ? null : load ? list[0] || null : null
-
-          done(null,ent)
-        }
-      })
+    function unrelate(ent, cb) {
+      if( 'card' != args.name ) {
+        seneca.act(
+          {role:plugin,cmd:'unrelate',ent:ent},
+          cb)
+      }
+      else return cb();
     }
 
+    function remove(cb) {
+      if( seneca.has('role:entity,base:card,cmd:remove') ) {
+        return seneca.prior( args, cb );
+      }
+      else {
+        delete args.actid$
+        delete args.base
 
+        return seneca.act( args, cb );
+      }
+    }
   }
-
 
 
 
