@@ -156,9 +156,7 @@ module.exports = function( options ) {
     var content  = args.ent
     var cardname = content.canon$({object:true}).name
 
-    var parentid = args.parent && args.parent.id
-
-    cardent.load$(parentid, function(err,parent){
+    load_parent(args.parent, function(err,parent){
       if( err ) return done(err);
 
       cardent.load$(content.id, function(err,card){
@@ -176,6 +174,15 @@ module.exports = function( options ) {
         else update_card( null, card, parent )
       })
     })
+
+    function load_parent( parent, done ) {
+      if (parent) {
+        cardent.load$(parent.id || parent, done)
+      }
+      else {
+        setImmediate(_.partial(done, null, null))
+      }
+    }
 
     function update_card(err,card,parent) {
       if( err ) return done(err);
@@ -223,20 +230,25 @@ module.exports = function( options ) {
 
       var parentid = card.parent
 
-      cardent.load$(parentid,function(err, parentcard){
-        if( err ) return done(err);
-        if( !parentcard ) return done();
-        
-        parentcard.children = _.filter(parentcard.children,function(child){
-          return child != content.id
-        })
-
-        parentcard.save$(function(err){
+      if( !parentid ) {
+        card.remove$(done)
+      }
+      else {
+        cardent.load$(parentid,function(err, parentcard){
           if( err ) return done(err);
+          if( !parentcard ) return done();
 
-          card.remove$(done)
+          parentcard.children = _.filter(parentcard.children,function(child){
+            return child != content.id
+          })
+
+          parentcard.save$(function(err){
+            if( err ) return done(err);
+
+            card.remove$(done)
+          })
         })
-      }) 
+      }
     })
   }
 
