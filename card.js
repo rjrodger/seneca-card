@@ -1,5 +1,5 @@
 /* Copyright (c) 2014 Richard Rodger, MIT License */
-"use strict";
+'use strict';
 
 
 var _     = require('underscore')
@@ -9,6 +9,8 @@ var async = require('async')
 
 
 module.exports = function( options ) {
+  /*jshint validthis:true */
+
   var seneca = this
   var plugin = 'card'
 
@@ -21,14 +23,14 @@ module.exports = function( options ) {
 
   seneca.add({
     role: plugin,
-    make: 'top',
+    make: 'top'
 
   }, make_top)
 
 
   seneca.add({
     role: plugin,
-    cmd: 'children',
+    cmd: 'children'
 
   }, cmd_children)
 
@@ -52,14 +54,14 @@ module.exports = function( options ) {
 
   seneca.add({
     role: plugin,
-    cmd: 'relate',
+    cmd: 'relate'
 
   }, cmd_relate)
 
 
   seneca.add({
     role: plugin,
-    cmd: 'unrelate',
+    cmd: 'unrelate'
 
   }, cmd_unrelate)
 
@@ -68,7 +70,7 @@ module.exports = function( options ) {
   seneca.add({
     role: 'entity',
     base: 'card',
-    cmd:  'save',
+    cmd:  'save'
 
   }, card_save)
 
@@ -76,7 +78,7 @@ module.exports = function( options ) {
   seneca.add({
     role: 'entity',
     base: 'card',
-    cmd:  'load',
+    cmd:  'load'
 
   }, card_load)
 
@@ -84,7 +86,7 @@ module.exports = function( options ) {
   seneca.add({
     role: 'entity',
     base: 'card',
-    cmd:  'remove',
+    cmd:  'remove'
 
   }, card_remove)
 
@@ -112,7 +114,7 @@ module.exports = function( options ) {
     var seneca = this
 
     var top = topent.make$({
-      title: args.title,
+      title: args.title
     })
 
     top.save$(function(err,top){
@@ -205,7 +207,7 @@ module.exports = function( options ) {
       cardent.load$(card.parent, function(err,parent){
         if( err ) return done(err);
 
-        if( card.id != parent.id ) {
+        if( card.id !== parent.id ) {
           parent.children.push( card.id )
           parent.children = _.uniq(parent.children)
         }
@@ -242,7 +244,7 @@ module.exports = function( options ) {
           if( !parentcard ) return done();
 
           parentcard.children = _.filter(parentcard.children,function(child){
-            return child != content.id
+            return child !== content.id
           })
 
           parentcard.save$(function(err){
@@ -262,11 +264,11 @@ module.exports = function( options ) {
 
     var parent = args.ent.parent
 
-    if( null == args.ent.title ) {
+    if( null === args.ent.title ) {
       args.ent.title = nid()
     }
 
-    if( 'card' != args.name ) {
+    if( 'card' !== args.name ) {
       delete args.ent.parent
       delete args.ent.children
     }
@@ -283,7 +285,7 @@ module.exports = function( options ) {
     function after( err, content ) {
       if( err ) return done(err);
 
-      if( 'card' != args.name ) {
+      if( 'card' !== args.name ) {
         seneca.act(
           {role:plugin,cmd:'relate',ent:content,parent:parent},
           function(err,out){
@@ -317,7 +319,7 @@ module.exports = function( options ) {
       if( err ) return done(err);
       if( !content ) return done();
 
-      if( 'card' != args.name ) {
+      if( 'card' !== args.name ) {
         cardent.load$(content.id,function(err,card){
           if( err ) return done(err);
 
@@ -346,7 +348,7 @@ module.exports = function( options ) {
 
     // load cards
     seneca.act(listargs, function(err,list) {
-      if( err ) return cb(err);
+      if( err ) return done(err);
 
       list = all ? list : 0<list.length ? list.slice(0,1) : []
 
@@ -369,7 +371,7 @@ module.exports = function( options ) {
     })
 
     function remove_children(ent, cb) {
-      if( 'card' != args.name ) {
+      if( 'card' !== args.name ) {
         seneca.act('role:card,cmd:children', {card: ent}, function (err, children) {
           if (err) { return cb(err) }
 
@@ -383,7 +385,7 @@ module.exports = function( options ) {
     }
 
     function unrelate(ent, cb) {
-      if( 'card' != args.name ) {
+      if( 'card' !== args.name ) {
         seneca.act(
           {role:plugin,cmd:'unrelate',ent:ent},
           cb)
