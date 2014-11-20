@@ -148,7 +148,7 @@ module.exports = function( options ) {
             out.push( childmap[childid] )
         })
 
-        done(null,{card:args.card.id,children:out})
+        done(null,{card:card.id, top:card.top, children:out})
       })
     })
   }
@@ -172,6 +172,7 @@ module.exports = function( options ) {
             id$:      content.id,
             title:    content.title,
             name:     cardname,
+            top:      parent ? parent.top : content.id,
             parent:   parent && parent.id,
             children: []
           }).save$(update_parent)
@@ -194,7 +195,11 @@ module.exports = function( options ) {
 
       card.title   = content.title
       card.name    = cardname
+
+      // TODO: @iantocristian review: does it make sense to update parent here?
+      //  since we're not supporting move, parent should be immutable
       card.parent  = parent && parent.id
+
       card.save$( update_parent )
     }
 
@@ -293,6 +298,7 @@ module.exports = function( options ) {
 
             out.content.children = out.card.children
             out.content.parent   = parent ? parent.id : out.content.id
+            out.content.top      = parent ? parent.top : out.content.id
 
             return done(null,out.content)
           })
@@ -325,6 +331,7 @@ module.exports = function( options ) {
 
           content.parent = card.parent
           content.children = card.children
+          content.top = card.top
 
           return done(null,content);
         })

@@ -1,5 +1,5 @@
 /* Copyright (c) 2014 Richard Rodger */
-"use strict";
+'use strict';
 
 // mocha card.test.js
 
@@ -67,6 +67,7 @@ describe('card', function() {
           if (err) return cb(err)
 
           assert.equal(top.id, top.parent)
+          assert.equal(top.id, top.top)
           assert.equal(0, top.children.length)
 
           ctx.top = top
@@ -82,6 +83,7 @@ describe('card', function() {
         if(err) return cb(err);
 
         assert.equal(ctx.top.id,note0.parent)
+        assert.equal(ctx.top.id,note0.top)
         assert.equal(0,note0.children.length)
 
         ctx.note0 = note0
@@ -96,6 +98,7 @@ describe('card', function() {
         if(err) return cb(err);
 
         assert.equal(ctx.note0.id,img0.parent)
+        assert.equal(ctx.top.id,img0.top)
         assert.equal(0,img0.children.length)
 
         ctx.img0 = img0
