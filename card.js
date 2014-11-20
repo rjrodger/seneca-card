@@ -94,7 +94,7 @@ module.exports = function( options ) {
 
 
   var cardent = seneca.make('card/card')
-  var topent  = seneca.make('card/top')
+  var topent = seneca.make('card/top')
 
 
   seneca.act({
@@ -126,7 +126,7 @@ module.exports = function( options ) {
 
 
 
-  function cmd_children( args, done ) {
+  function cmd_children(args, done) {
     var seneca = this
 
     cardent.load$(args.card.id, function (err, card) {
@@ -139,8 +139,11 @@ module.exports = function( options ) {
         var childmap = {}
 
         _.each(children, function (child) {
-          childmap[child.id] =
-          {id: child.id, name: child.name, title: child.title}
+          childmap[child.id] = {
+            id: child.id,
+            name: child.name,
+            title: child.title
+          }
         })
 
         var out = []
@@ -149,14 +152,18 @@ module.exports = function( options ) {
             out.push(childmap[childid])
         })
 
-        done(null, {card: card.id, top: card.top, children: out})
+        done(null, {
+          card: card.id,
+          top: card.top,
+          children: out
+        })
       })
     })
   }
 
 
 
-  function cmd_relate( args, done ) {
+  function cmd_relate(args, done) {
     var seneca = this
 
     var content  = args.ent
@@ -201,6 +208,7 @@ module.exports = function( options ) {
     }
 
     function update_card(card, parent) {
+
       card.title = content.title
       card.name = cardname
 
@@ -238,7 +246,7 @@ module.exports = function( options ) {
 
 
 
-  function cmd_unrelate( args, done ) {
+  function cmd_unrelate(args, done) {
     var seneca = this
 
     var content = args.ent
@@ -274,88 +282,88 @@ module.exports = function( options ) {
 
 
 
-  function card_save(args, done){
+  function card_save(args, done) {
     var seneca = this
 
     var parent = args.ent.parent
 
-    if( null === args.ent.title ) {
+    if (null === args.ent.title) {
       args.ent.title = nid()
     }
 
-    if( 'card' !== args.name ) {
+    if ('card' !== args.name) {
       delete args.ent.parent
       delete args.ent.children
     }
 
-    if( seneca.has('role:entity,base:card,cmd:save') ) {
-      return seneca.prior( args, after );
+    if (seneca.has('role:entity,base:card,cmd:save')) {
+      return seneca.prior(args, after);
     }
     else {
       delete args.actid$
       delete args.base
-      return seneca.act( args, after );
+      return seneca.act(args, after);
     }
 
-    function after( err, content ) {
-      if( err ) return done(err);
+    function after(err, content) {
+      if (err) return done(err);
 
-      if( 'card' !== args.name ) {
+      if ('card' !== args.name) {
         seneca.act(
-          {role:plugin,cmd:'relate',ent:content,parent:parent},
-          function(err,out){
-            if( err ) return done(err);
+          {role: plugin, cmd: 'relate', ent: content, parent: parent},
+          function (err, out) {
+            if (err) return done(err);
 
             out.content.children = out.card.children
 
             // TODO: @iantocristian review: do we need to set parent to self for top (root) cards?
-            out.content.parent   = parent ? parent.id : out.content.id
-            out.content.top      = parent ? parent.top : out.content.id
+            out.content.parent = parent ? parent.id : out.content.id
+            out.content.top = parent ? parent.top : out.content.id
 
-            return done(null,out.content)
+            return done(null, out.content)
           })
       }
-      else return done(null,content)
+      else return done(null, content)
     }
   }
 
 
 
-  function card_load(args, done){
+  function card_load(args, done) {
     var seneca = this
 
-    if( seneca.has('role:entity,base:card,cmd:load') ) {
-      return seneca.prior( args, after );
+    if (seneca.has('role:entity,base:card,cmd:load')) {
+      return seneca.prior(args, after);
     }
     else {
       delete args.actid$
       delete args.base
-      return seneca.act( args, after );
+      return seneca.act(args, after);
     }
 
-    function after( err, content ) {
-      if( err ) return done(err);
-      if( !content ) return done();
+    function after(err, content) {
+      if (err) return done(err);
+      if (!content) return done();
 
-      if( 'card' !== args.name ) {
-        cardent.load$(content.id,function(err,card){
-          if( err ) return done(err);
+      if ('card' !== args.name) {
+        cardent.load$(content.id, function (err, card) {
+          if (err) return done(err);
           if (!card) return done(seneca.fail('card-not-found', {id: content.id}));
 
           content.parent = card.parent
           content.children = card.children
           content.top = card.top
 
-          return done(null,content);
+          return done(null, content);
         })
       }
-      else return done(null,content);
+      else return done(null, content);
     }
   }
 
 
 
-  function card_remove(args, done){
+  function card_remove(args, done) {
     var seneca = this
 
     var load = _.isUndefined(args.q.load$) ? true : args.q.load$ // default true
