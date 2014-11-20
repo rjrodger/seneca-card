@@ -117,10 +117,10 @@ module.exports = function( options ) {
       title: args.title
     })
 
-    top.save$(function(err,top){
-      if(err) return done(err);
+    top.save$(function (err, top) {
+      if (err) return done(err);
 
-      return done(null,top)
+      return done(null, top)
     })
   }
 
@@ -129,26 +129,27 @@ module.exports = function( options ) {
   function cmd_children( args, done ) {
     var seneca = this
 
-    cardent.load$( args.card.id, function(err,card) {
-      if(err) return done(err);
+    cardent.load$(args.card.id, function (err, card) {
+      if (err) return done(err);
+      if (!card) return done(seneca.fail('card-not-found', {id: args.card.id}));
 
-      cardent.list$( {parent:card.id}, function(err,children){
-        if(err) return done(err);
+      cardent.list$({parent: card.id}, function (err, children) {
+        if (err) return done(err);
 
         var childmap = {}
 
-        _.each(children,function(child){
+        _.each(children, function (child) {
           childmap[child.id] =
-            {id:child.id, name:child.name, title:child.title}
+          {id: child.id, name: child.name, title: child.title}
         })
 
         var out = []
-        _.each(card.children,function(childid){
-          if( childmap[childid] )
-            out.push( childmap[childid] )
+        _.each(card.children, function (childid) {
+          if (childmap[childid])
+            out.push(childmap[childid])
         })
 
-        done(null,{card:card.id, top:card.top, children:out})
+        done(null, {card: card.id, top: card.top, children: out})
       })
     })
   }
@@ -161,68 +162,76 @@ module.exports = function( options ) {
     var content  = args.ent
     var cardname = content.canon$({object:true}).name
 
-    load_parent(args.parent, function(err,parent){
-      if( err ) return done(err);
+    load_parent(args.parent, function (err, parent) {
+      if (err) return done(err);
 
-      cardent.load$(content.id, function(err,card){
-        if( err ) return done(err);
-        
-        if( !card ) {
-          card = cardent.make$({
-            id$:      content.id,
-            title:    content.title,
-            name:     cardname,
-            top:      parent ? parent.top : content.id,
-            parent:   parent && parent.id,
+      cardent.load$(content.id, function (err, card) {
+        if (err) return done(err);
+
+        if (!card) {
+          cardent.make$({
+            id$: content.id,
+            title: content.title,
+            name: cardname,
+            top: parent ? parent.top : content.id,
+            parent: parent ? parent.id : null,
             children: []
-          }).save$(update_parent)
+          }).save$(function (err, card) {
+            if (err) return done(err);
+
+            update_parent(card, parent)
+          });
         }
-        else update_card( null, card, parent )
+        else update_card(card, parent)
       })
     })
 
-    function load_parent( parent, done ) {
+    function load_parent(parent, done) {
       if (parent) {
-        cardent.load$(parent.id || parent, done)
+        cardent.load$(parent.id || parent, function (err, card) {
+          if (err) return done(err);
+          if (!card) return done(seneca.fail('parent-card-not-found', {id: parent.id || parent}));
+
+          done(null, card);
+        });
       }
       else {
         setImmediate(_.partial(done, null, null))
       }
     }
 
-    function update_card(err,card,parent) {
-      if( err ) return done(err);
-
-      card.title   = content.title
-      card.name    = cardname
+    function update_card(card, parent) {
+      card.title = content.title
+      card.name = cardname
 
       // TODO: @iantocristian review: does it make sense to update parent here?
       //  since we're not supporting move, parent should be immutable
-      card.parent  = parent && parent.id
+      card.parent = parent && parent.id
 
-      card.save$( update_parent )
+      card.save$(function (err, card) {
+        if (err) return done(err);
+
+        update_parent(card, parent)
+      })
     }
 
-    function update_parent(err,card) {
-      if( err ) return done(err);
-
-      if( !card.parent ) 
-        return done(null,{content:content,card:card});
-
-      cardent.load$(card.parent, function(err,parent){
-        if( err ) return done(err);
-
+    function update_parent(card, parent) {
+      if (parent) {
+      // TODO: @iantocristian review: card.id === parent.id, does this really happen
         if( card.id !== parent.id ) {
-          parent.children.push( card.id )
+          parent.children.push(card.id)
           parent.children = _.uniq(parent.children)
         }
 
-        parent.save$(function(err){
-          if( err ) return done(err);
-          
-          done(null,{content:content,card:card})
+        parent.save$(function (err) {
+          if (err) return done(err);
+
+          done(null, {content: content, card: card})
         })
-      })
+      }
+      else { // top cards have no parent, we don't mind
+        return done(null, {content: content, card: card});
+      }
     }
     
   }
@@ -232,28 +241,29 @@ module.exports = function( options ) {
   function cmd_unrelate( args, done ) {
     var seneca = this
 
-    var content  = args.ent
-    var cardname = content.canon$({object:true}).name
+    var content = args.ent
+    var cardname = content.canon$({object: true}).name
 
-    cardent.load$(content.id, function(err,card){
-      if( err ) return done(err);
+    cardent.load$(content.id, function (err, card) {
+      if (err) return done(err);
+      if (!card) return done(seneca.fail('card-not-found', {id: content.id}));
 
       var parentid = card.parent
 
-      if( !parentid ) {
+      if (!parentid) {
         card.remove$(done)
       }
       else {
-        cardent.load$(parentid,function(err, parentcard){
-          if( err ) return done(err);
-          if( !parentcard ) return done();
+        cardent.load$(parentid, function (err, parentcard) {
+          if (err) return done(err);
+          if (!parentcard) return done(seneca.fail('parent-card-not-found', {id: parentid}));
 
-          parentcard.children = _.filter(parentcard.children,function(child){
+          parentcard.children = _.filter(parentcard.children, function (child) {
             return child !== content.id
           })
 
-          parentcard.save$(function(err){
-            if( err ) return done(err);
+          parentcard.save$(function (err) {
+            if (err) return done(err);
 
             card.remove$(done)
           })
@@ -297,6 +307,8 @@ module.exports = function( options ) {
             if( err ) return done(err);
 
             out.content.children = out.card.children
+
+            // TODO: @iantocristian review: do we need to set parent to self for top (root) cards?
             out.content.parent   = parent ? parent.id : out.content.id
             out.content.top      = parent ? parent.top : out.content.id
 
@@ -328,6 +340,7 @@ module.exports = function( options ) {
       if( 'card' !== args.name ) {
         cardent.load$(content.id,function(err,card){
           if( err ) return done(err);
+          if (!card) return done(seneca.fail('card-not-found', {id: content.id}));
 
           content.parent = card.parent
           content.children = card.children
