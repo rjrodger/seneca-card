@@ -94,7 +94,6 @@ module.exports = function( options ) {
 
 
   var cardent = seneca.make('card/card')
-  var topent = seneca.make('card/top')
 
 
   seneca.act({
@@ -113,6 +112,8 @@ module.exports = function( options ) {
   function make_top(args, done){
     var seneca = this
 
+    var topent = seneca.make('card/top')
+
     var top = topent.make$({
       title: args.title
     })
@@ -128,6 +129,8 @@ module.exports = function( options ) {
 
   function cmd_children(args, done) {
     var seneca = this
+
+    var cardent = seneca.make('card/card')
 
     cardent.load$(args.card.id, function (err, card) {
       if (err) return done(err);
@@ -165,6 +168,8 @@ module.exports = function( options ) {
 
   function cmd_relate(args, done) {
     var seneca = this
+
+    var cardent = seneca.make('card/card')
 
     var content  = args.ent
     var cardname = content.canon$({object:true}).name
@@ -249,6 +254,8 @@ module.exports = function( options ) {
   function cmd_unrelate(args, done) {
     var seneca = this
 
+    var cardent = seneca.make('card/card')
+
     var content = args.ent
     var cardname = content.canon$({object: true}).name
 
@@ -331,6 +338,8 @@ module.exports = function( options ) {
 
   function card_load(args, done) {
     var seneca = this
+
+    var cardent = seneca.make('card/card')
 
     if (seneca.has('role:entity,base:card,cmd:load')) {
       return seneca.prior(args, after);
