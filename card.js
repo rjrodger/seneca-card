@@ -299,6 +299,7 @@ module.exports = function( options ) {
     }
 
     if ('card' !== args.name) {
+      delete args.ent.top
       delete args.ent.parent
       delete args.ent.children
     }
